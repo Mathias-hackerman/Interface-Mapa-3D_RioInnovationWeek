@@ -12,12 +12,11 @@
 <body>
   <div id="cesiumContainer"></div>
   <script>
-    // Coloque seu token do Cesium Ion abaixo (pegue em https://cesium.com/ion/):
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3NDQxNTFhZS1lYjU3LTQ4MzAtODEzYi0wZmNlZDZjMzhiNjYiLCJpZCI6MzI5MDcxLCJpYXQiOjE3NTQ0MTYxNDh9.aWhacSF-v9v1a7iU7oyOe3_-mF7PrVyHLlNoBdaTE0c';
+    // Coloque seu token do Cesium Ion abaixo
+    Cesium.Ion.defaultAccessToken = 'COLE_SEU_TOKEN_AQUI';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      // Se quiser ativar o terreno realista, descomente a linha abaixo:
-      // terrainProvider: Cesium.createWorldTerrain(),
+      // terrainProvider: Cesium.createWorldTerrain(), // Se quiser terreno realista, descomente essa linha
       baseLayerPicker: false,
       timeline: false,
       animation: false,
@@ -28,13 +27,13 @@
       geocoder: false
     });
 
-    // Para prédios OSM, descomente a linha abaixo:
+    // Para prédios OSM, descomente a linha abaixo se quiser (e seu token estiver ativo)
     // viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
     // Posição inicial (Rio de Janeiro)
     let lon = -43.209373, lat = -22.911014, height = 20;
 
-    // Modelo 3D público
+    // Modelo 3D público (corrigido)
     const personagem = viewer.entities.add({
       name: "Personagem",
       position: Cesium.Cartesian3.fromDegrees(lon, lat, height),
@@ -65,4 +64,3 @@
   </script>
 </body>
 </html>
-
