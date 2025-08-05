@@ -13,7 +13,7 @@
   <div id="cesiumContainer"></div>
   <script>
     // Coloque seu token do Cesium Ion abaixo
-    Cesium.Ion.defaultAccessToken = 'COLE_SEU_TOKEN_AQUI';
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3NDQxNTFhZS1lYjU3LTQ4MzAtODEzYi0wZmNlZDZjMzhiNjYiLCJpZCI6MzI5MDcxLCJpYXQiOjE3NTQ0MTYxNDh9.aWhacSF-v9v1a7iU7oyOe3_-mF7PrVyHLlNoBdaTE0c';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
       // terrainProvider: Cesium.createWorldTerrain(), // Se quiser terreno realista, descomente essa linha
@@ -28,7 +28,7 @@
     });
 
     // Para prédios OSM, descomente a linha abaixo se quiser (e seu token estiver ativo)
-    // viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
     // Posição inicial (Rio de Janeiro)
     let lon = -43.209373, lat = -22.911014, height = 20;
@@ -64,3 +64,4 @@
   </script>
 </body>
 </html>
+
