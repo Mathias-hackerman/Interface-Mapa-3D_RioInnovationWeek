@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>CesiumJS + Personagem 3D com Token</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;}
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    // Coloque seu token do Cesium Ion abaixo (pegue em https://cesium.com/ion/):
+    Cesium.Ion.defaultAccessToken = 'COLE_SEU_TOKEN_AQUI';
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      // Se quiser ativar o terreno realista, descomente a linha abaixo:
+      // terrainProvider: Cesium.createWorldTerrain(),
+      baseLayerPicker: false,
+      timeline: false,
+      animation: false,
+      scene3DOnly: true,
+      homeButton: false,
+      sceneModePicker: false,
+      navigationHelpButton: false,
+      geocoder: false
+    });
+
+    // Para prédios OSM, descomente a linha abaixo:
+    // viewer.scene.primitives.add(Cesium.createOsmBuildings());
+
+    // Posição inicial (Rio de Janeiro)
+    let lon = -43.209373, lat = -22.911014, height = 20;
+
+    // Modelo 3D público
+    const personagem = viewer.entities.add({
+      name: "Personagem",
+      position: Cesium.Cartesian3.fromDegrees(lon, lat, height),
+      model: {
+        uri: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Astronaut/glTF-Binary/Astronaut.glb",
+        scale: 2,
+        minimumPixelSize: 64
+      }
+    });
+
+    // Centraliza a câmera no personagem
+    viewer.trackedEntity = personagem;
+
+    // Movimento com teclado
+    const MOVE_STEP = 0.0002, HEIGHT_STEP = 1;
+    document.addEventListener('keydown', function(event) {
+      switch(event.code) {
+        case 'ArrowLeft': lon -= MOVE_STEP; break;
+        case 'ArrowRight': lon += MOVE_STEP; break;
+        case 'ArrowUp': lat += MOVE_STEP; break;
+        case 'ArrowDown': lat -= MOVE_STEP; break;
+        case 'PageUp': height += HEIGHT_STEP; break;
+        case 'PageDown': height = Math.max(0, height - HEIGHT_STEP); break;
+        default: return;
+      }
+      personagem.position = Cesium.Cartesian3.fromDegrees(lon, lat, height);
+    });
+  </script>
+</body>
+</html>
