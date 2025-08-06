@@ -1,114 +1,90 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>Mapa 3D com Cubo Controlável</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  <title>Rio 3D com WASD</title>
   <style>
-    body { margin: 0; padding: 0; }
+    body, html { margin: 0; padding: 0; overflow: hidden; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
   </style>
+  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
+</head>
+<body>
+  <div id="map"></div>
 
-  <!-- MapLibre -->
-  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-
-  <!-- Three.js -->
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-
-    const initialLng = -43.1729;
-    const initialLat = -22.9068;
-    let currentLng = initialLng;
-    let currentLat = initialLat;
-    const moveSpeed = 0.0005;
-
-    const keys = {
-      KeyW: false,
-      KeyA: false,
-      KeyS: false,
-      KeyD: false
-    };
-
-    window.addEventListener('keydown', (e) => {
-      if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
-    });
-
-    window.addEventListener('keyup', (e) => {
-      if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
-    });
 
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://demotiles.maplibre.org/style.json',
-      center: [initialLng, initialLat],
-      zoom: 17,
+      center: [-43.1729, -22.9068], // Rio de Janeiro
+      zoom: 16,
       pitch: 60,
-      bearing: 0,
+      bearing: -20,
       antialias: true
     });
 
+    let cube, scene, camera, renderer, mercator, keys = {};
+
+    const initialLngLat = [-43.1729, -22.9068];
+
     map.on('load', () => {
       const customLayer = {
-        id: 'threejs-layer',
+        id: 'three-layer',
         type: 'custom',
         renderingMode: '3d',
+        onAdd(map, gl) {
+          camera = new THREE.Camera();
+          scene = new THREE.Scene();
 
-        onAdd: function (map, gl) {
-          this.scene = new THREE.Scene();
-          this.camera = new THREE.Camera();
+          const light = new THREE.DirectionalLight(0xffffff, 1);
+          light.position.set(0, 0, 1000).normalize();
+          scene.add(light);
 
-          this.renderer = new THREE.WebGLRenderer({
-            canvas: map.getCanvas(),
-            context: gl,
-            antialias: true
-          });
-          this.renderer.autoClear = false;
+          const geometry = new THREE.BoxGeometry(10, 10, 10);
+          const material = new THREE.MeshNormalMaterial();
+          cube = new THREE.Mesh(geometry, material);
+          scene.add(cube);
 
-          // DEBUG: Caixa vermelha, wireframe
-          const geometry = new THREE.BoxGeometry(10, 10, 10); // Tamanho grande visível
-          const material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-          this.cube = new THREE.Mesh(geometry, material);
+          renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl });
+          renderer.autoClear = false;
 
-          // DEBUG: posição absoluta no centro Mercator
-          const mercator = maplibregl.MercatorCoordinate.fromLngLat(
-            [initialLng, initialLat],
-            0 // altitude 0 metros
+          mercator = maplibregl.MercatorCoordinate.fromLngLat(
+            { lng: initialLngLat[0], lat: initialLngLat[1] },
+            0
           );
 
-          const zoom = map.getZoom();
-          const lat = initialLat;
-          const scale = Math.cos(lat * Math.PI / 180) * (2 ** zoom) / 512;
-
-
-          this.cube.scale.set(scale * 10, scale * 10, scale * 10);
-          this.cube.position.set(mercator.x, mercator.y, mercator.z + 2 * scale);
-
-          this.scene.add(this.cube);
+          cube.position.copy(mercator);
         },
+        render(gl, matrix) {
+          // Atualiza posição baseada nas teclas pressionadas
+          const speed = 0.0005;
+          if (keys['w']) mercator.y += speed;
+          if (keys['s']) mercator.y -= speed;
+          if (keys['a']) mercator.x -= speed;
+          if (keys['d']) mercator.x += speed;
 
-        render: function (gl, matrix) {
-          // Movimentação do mapa (como se o cubo andasse)
-          if (keys.KeyW) currentLat += moveSpeed;
-          if (keys.KeyS) currentLat -= moveSpeed;
-          if (keys.KeyA) currentLng -= moveSpeed;
-          if (keys.KeyD) currentLng += moveSpeed;
+          cube.position.copy(mercator);
 
-          map.setCenter([currentLng, currentLat]);
+          // Mantém o mapa centrado no cubo
+          const lngLat = map.unproject([map.getCanvas().width / 2, map.getCanvas().height / 2]);
+          map.setCenter({ lng: mercator.lng || lngLat.lng, lat: mercator.lat || lngLat.lat });
 
-          const m = new THREE.Matrix4().fromArray(matrix);
-          this.camera.projectionMatrix = m;
-          this.renderer.state.reset();
-          this.renderer.render(this.scene, this.camera);
+          camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
+          renderer.state.reset();
+          renderer.render(scene, camera);
           map.triggerRepaint();
         }
       };
 
       map.addLayer(customLayer);
     });
+
+    // Controles WASD
+    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
   </script>
-</head>
-<body>
-  <div id="map"></div>
 </body>
 </html>
