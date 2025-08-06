@@ -9,7 +9,7 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 camera.position.set(10, 20, 10);  // X, Y, Z
-camera.lookAt(cube.position);
+
 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -34,6 +34,7 @@ const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube.position.y = 0.5;
 scene.add(cube);
+camera.lookAt(cube.position);
 
 // Controles de movimento
 const keys = {
