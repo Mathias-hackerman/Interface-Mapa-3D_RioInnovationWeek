@@ -17,7 +17,7 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-    const initialPosition = [-43.1729, -22.9068]; // Centro do Rio
+    const initialPosition = [-43.1729, -22.9068]; // Rio de Janeiro (Cristo Redentor)
     let currentLng = initialPosition[0];
     let currentLat = initialPosition[1];
     const moveSpeed = 0.0005;
@@ -48,8 +48,12 @@
     });
 
     let cube;
+    let meterScale;
 
     map.on('load', () => {
+      const mercator = maplibregl.MercatorCoordinate.fromLngLat(initialPosition, 0);
+      meterScale = mercator.meterInMercatorUnits();
+
       const customLayer = {
         id: 'threejs-layer',
         type: 'custom',
@@ -64,10 +68,17 @@
           });
           this.renderer.autoClear = false;
 
-          const geometry = new THREE.BoxGeometry(10, 10, 10);
+          // Tamanho do cubo: 2m x 2m x 2m (em metros reais)
+          const geometry = new THREE.BoxGeometry(1, 1, 1);
           const material = new THREE.MeshNormalMaterial();
           cube = new THREE.Mesh(geometry, material);
-          cube.position.set(0, 0, 5); // Fixo no centro da tela
+
+          // Escala real (em metros)
+          cube.scale.set(meterScale, meterScale, meterScale);
+
+          // Posição central da tela (MercatorCoordinate: 0,0,0)
+          cube.position.set(mercator.x, mercator.y, mercator.z + 5 * meterScale); // 5 metros acima do chão
+
           this.scene.add(cube);
         },
 
@@ -78,10 +89,9 @@
           if (keys.ArrowLeft) currentLng -= moveSpeed;
           if (keys.ArrowRight) currentLng += moveSpeed;
 
-          // Move o mapa, não o cubo
+          // Move o mapa (não o cubo)
           map.setCenter([currentLng, currentLat]);
 
-          // Atualiza a câmera e renderiza
           const m = new THREE.Matrix4().fromArray(matrix);
           this.camera.projectionMatrix = m;
           this.renderer.state.reset();
