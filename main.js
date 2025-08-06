@@ -31,7 +31,7 @@ scene.add(floor);
 // Cubo
 let personagem = null;
 
-const loader = new GLTFLoader();
+const loader = new THREE.GLTFLoader();
 loader.load('personagem.glb', (gltf) => {
   personagem = gltf.scene;
   personagem.scale.set(1, 1, 1); // Escala parecida com o cubo
