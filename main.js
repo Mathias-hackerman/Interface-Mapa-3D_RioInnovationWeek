@@ -1,4 +1,4 @@
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
 
 // Cena, câmera e renderizador
 const scene = new THREE.Scene();
