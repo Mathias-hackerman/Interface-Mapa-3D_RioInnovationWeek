@@ -55,15 +55,21 @@ const speed = 0.1;
 function animate() {
   requestAnimationFrame(animate);
 
-  if (keys.w) cube.position.z -= speed;
-  if (keys.s) cube.position.z += speed;
-  if (keys.a) cube.position.x -= speed;
-  if (keys.d) cube.position.x += speed;
+  let moveX = 0;
+  let moveZ = 0;
+  
+  if (keys.w) moveZ -= 1;
+  if (keys.s) moveZ += 1;
+  if (keys.a) moveX -= 1;
+  if (keys.d) moveX += 1;
+  
+  // Joystick (normalizado)
+  moveX += joystick.deltaX;
+  moveZ += joystick.deltaY;
+  
+  cube.position.x += moveX * speed;
+  cube.position.z += moveZ * speed;
 
-  // Atualiza a posição da câmera para seguir o cubo
-  camera.position.x = cube.position.x;
-  camera.position.z = cube.position.z + 10;
-  camera.lookAt(cube.position);
 
   renderer.render(scene, camera);
 }
@@ -76,3 +82,53 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+let joystick = {
+  active: false,
+  startX: 0,
+  startY: 0,
+  deltaX: 0,
+  deltaY: 0
+};
+
+const stick = document.getElementById("joystick-stick");
+const base = document.getElementById("joystick-base");
+
+base.addEventListener("touchstart", (e) => {
+  joystick.active = true;
+  const touch = e.targetTouches[0];
+  joystick.startX = touch.clientX;
+  joystick.startY = touch.clientY;
+}, false);
+
+base.addEventListener("touchmove", (e) => {
+  if (!joystick.active) return;
+
+  const touch = e.targetTouches[0];
+  const dx = touch.clientX - joystick.startX;
+  const dy = touch.clientY - joystick.startY;
+
+  // Limite o deslocamento do stick
+  const maxDist = 40;
+  const dist = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx);
+
+  const limitedDist = Math.min(dist, maxDist);
+  const limitedX = Math.cos(angle) * limitedDist;
+  const limitedY = Math.sin(angle) * limitedDist;
+
+  stick.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+
+  joystick.deltaX = limitedX / maxDist;
+  joystick.deltaY = limitedY / maxDist;
+
+  e.preventDefault();
+}, false);
+
+base.addEventListener("touchend", () => {
+  joystick.active = false;
+  joystick.deltaX = 0;
+  joystick.deltaY = 0;
+  stick.style.transform = `translate(0px, 0px)`;
+}, false);
+
