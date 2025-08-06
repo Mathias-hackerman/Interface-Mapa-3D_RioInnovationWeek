@@ -52,30 +52,6 @@ document.addEventListener('keyup', (e) => {
 // Lógica de movimento
 const speed = 0.1;
 
-function animate() {
-  requestAnimationFrame(animate);
-
-  let moveX = 0;
-  let moveZ = 0;
-  
-  if (keys.w) moveZ -= 1;
-  if (keys.s) moveZ += 1;
-  if (keys.a) moveX -= 1;
-  if (keys.d) moveX += 1;
-  
-  // Joystick (normalizado)
-  moveX += joystick.deltaX;
-  moveZ += joystick.deltaY;
-  
-  cube.position.x += moveX * speed;
-  cube.position.z += moveZ * speed;
-
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
 // Responsividade
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -131,4 +107,28 @@ base.addEventListener("touchend", () => {
   joystick.deltaY = 0;
   stick.style.transform = `translate(0px, 0px)`;
 }, false);
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  let moveX = 0;
+  let moveZ = 0;
+  
+  if (keys.w) moveZ -= 1;
+  if (keys.s) moveZ += 1;
+  if (keys.a) moveX -= 1;
+  if (keys.d) moveX += 1;
+  
+  // Joystick (normalizado)
+  moveX += joystick.deltaX;
+  moveZ += joystick.deltaY;
+  
+  cube.position.x += moveX * speed;
+  cube.position.z += moveZ * speed;
+
+
+  renderer.render(scene, camera);
+}
+
+animate();
 
