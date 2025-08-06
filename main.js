@@ -1,3 +1,5 @@
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
 // Cena, câmera e renderizador
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xbfd1e5);
@@ -31,7 +33,7 @@ scene.add(floor);
 // Cubo
 let personagem = null;
 
-const loader = new THREE.GLTFLoader();
+const loader = new GLTFLoader();
 loader.load('personagem.glb', (gltf) => {
   personagem = gltf.scene;
   personagem.scale.set(1, 1, 1); // Escala parecida com o cubo
