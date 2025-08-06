@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Mapa 3D do Rio de Janeiro com MapLibre</title>
+  <title>Mapa 3D com jogador controlado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { margin: 0; padding: 0; }
@@ -13,19 +13,56 @@
   <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
 
-  <!-- Three.js -->
+  <!-- Three.js com módulo -->
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://demotiles.maplibre.org/style.json',
-      center: [-43.1729, -22.9068], // Rio de Janeiro
-      zoom: 13,
+      center: [-43.1729, -22.9068], // Centro do Rio
+      zoom: 17,
       pitch: 60,
-      bearing: -20,
+      bearing: 0,
       antialias: true
     });
+
+    // Estado do jogador
+    let playerLng = -43.1729;
+    let playerLat = -22.9068;
+    let playerSpeed = 0.0003;
+
+    const keys = {
+      ArrowUp: false,
+      ArrowDown: false,
+      ArrowLeft: false,
+      ArrowRight: false
+    };
+
+    window.addEventListener('keydown', e => {
+      if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    });
+
+    window.addEventListener('keyup', e => {
+      if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+    });
+
+    function updatePlayerPosition() {
+      if (keys.ArrowUp) playerLat += playerSpeed;
+      if (keys.ArrowDown) playerLat -= playerSpeed;
+      if (keys.ArrowLeft) playerLng -= playerSpeed;
+      if (keys.ArrowRight) playerLng += playerSpeed;
+    }
+
+    // Converte lon/lat para posição 3D
+    function lngLatToWorld(lng, lat) {
+      const projection = map.getProjection();
+      const p = projection.project([lng, lat]);
+      const scale = Math.pow(2, map.getZoom());
+      return new THREE.Vector3(p.x * scale, -p.y * scale, 0);
+    }
+
+    let cube;
 
     map.on('load', () => {
       const customLayer = {
@@ -42,14 +79,25 @@
           });
           this.renderer.autoClear = false;
 
-          // Cubo de exemplo
           const geometry = new THREE.BoxGeometry(100, 100, 100);
           const material = new THREE.MeshNormalMaterial();
-          const cube = new THREE.Mesh(geometry, material);
-          cube.position.set(0, 0, 50);
+          cube = new THREE.Mesh(geometry, material);
+          cube.position.copy(lngLatToWorld(playerLng, playerLat));
+          cube.position.z = 50; // Elevação
           this.scene.add(cube);
         },
         render: function (gl, matrix) {
+          updatePlayerPosition();
+
+          // Atualiza posição 3D do jogador
+          const worldPos = lngLatToWorld(playerLng, playerLat);
+          cube.position.copy(worldPos);
+          cube.position.z = 50;
+
+          // Atualiza centro do mapa para seguir o jogador
+          map.setCenter([playerLng, playerLat]);
+
+          // Renderiza cena
           const m = new THREE.Matrix4().fromArray(matrix);
           this.camera.projectionMatrix = m;
           this.renderer.state.reset();
