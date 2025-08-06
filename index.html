@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Mapa 3D com jogador controlado</title>
+  <title>Jogador 3D com MapLibre</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { margin: 0; padding: 0; }
@@ -13,24 +13,13 @@
   <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
 
-  <!-- Three.js com módulo -->
+  <!-- Three.js -->
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-    const map = new maplibregl.Map({
-      container: 'map',
-      style: 'https://demotiles.maplibre.org/style.json',
-      center: [-43.1729, -22.9068], // Centro do Rio
-      zoom: 17,
-      pitch: 60,
-      bearing: 0,
-      antialias: true
-    });
-
-    // Estado do jogador
     let playerLng = -43.1729;
     let playerLat = -22.9068;
-    let playerSpeed = 0.0003;
+    const playerSpeed = 0.0003;
 
     const keys = {
       ArrowUp: false,
@@ -40,27 +29,22 @@
     };
 
     window.addEventListener('keydown', e => {
-      if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+      if (e.key in keys) keys[e.key] = true;
     });
 
     window.addEventListener('keyup', e => {
-      if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+      if (e.key in keys) keys[e.key] = false;
     });
 
-    function updatePlayerPosition() {
-      if (keys.ArrowUp) playerLat += playerSpeed;
-      if (keys.ArrowDown) playerLat -= playerSpeed;
-      if (keys.ArrowLeft) playerLng -= playerSpeed;
-      if (keys.ArrowRight) playerLng += playerSpeed;
-    }
-
-    // Converte lon/lat para posição 3D
-    function lngLatToWorld(lng, lat) {
-      const projection = map.getProjection();
-      const p = projection.project([lng, lat]);
-      const scale = Math.pow(2, map.getZoom());
-      return new THREE.Vector3(p.x * scale, -p.y * scale, 0);
-    }
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [playerLng, playerLat],
+      zoom: 17,
+      pitch: 60,
+      bearing: 0,
+      antialias: true
+    });
 
     let cube;
 
@@ -70,8 +54,8 @@
         type: 'custom',
         renderingMode: '3d',
         onAdd: function (map, gl) {
-          this.camera = new THREE.Camera();
           this.scene = new THREE.Scene();
+          this.camera = new THREE.Camera();
           this.renderer = new THREE.WebGLRenderer({
             canvas: map.getCanvas(),
             context: gl,
@@ -79,25 +63,29 @@
           });
           this.renderer.autoClear = false;
 
-          const geometry = new THREE.BoxGeometry(100, 100, 100);
+          // Criando cubo 3D
+          const geometry = new THREE.BoxGeometry(10, 10, 10);
           const material = new THREE.MeshNormalMaterial();
           cube = new THREE.Mesh(geometry, material);
-          cube.position.copy(lngLatToWorld(playerLng, playerLat));
-          cube.position.z = 50; // Elevação
           this.scene.add(cube);
         },
         render: function (gl, matrix) {
-          updatePlayerPosition();
+          // Atualiza posição do jogador
+          if (keys.ArrowUp) playerLat += playerSpeed;
+          if (keys.ArrowDown) playerLat -= playerSpeed;
+          if (keys.ArrowLeft) playerLng -= playerSpeed;
+          if (keys.ArrowRight) playerLng += playerSpeed;
 
-          // Atualiza posição 3D do jogador
-          const worldPos = lngLatToWorld(playerLng, playerLat);
-          cube.position.copy(worldPos);
-          cube.position.z = 50;
+          // Move o cubo na posição atualizada
+          const merc = maplibregl.MercatorCoordinate.fromLngLat([playerLng, playerLat], 0);
+          cube.position.set(merc.x, merc.y, merc.z + 0.005);
 
-          // Atualiza centro do mapa para seguir o jogador
+          // Escala visual (ajustável)
+          cube.scale.set(merc.meterInMercatorUnits(), merc.meterInMercatorUnits(), merc.meterInMercatorUnits());
+
+          // Câmera segue o jogador
           map.setCenter([playerLng, playerLat]);
 
-          // Renderiza cena
           const m = new THREE.Matrix4().fromArray(matrix);
           this.camera.projectionMatrix = m;
           this.renderer.state.reset();
