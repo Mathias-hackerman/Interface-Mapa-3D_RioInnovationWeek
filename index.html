@@ -11,5 +11,43 @@
 <body>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script src="main.js"></script>
+  <div id="joystick-container">
+  <div id="joystick-base">
+    <div id="joystick-stick"></div>
+  </div>
+</div>
+
+<style>
+  #joystick-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 120px;
+    height: 120px;
+    z-index: 10;
+    touch-action: none;
+  }
+
+  #joystick-base {
+    width: 100%;
+    height: 100%;
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 50%;
+    position: relative;
+  }
+
+  #joystick-stick {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 255, 0, 0.7);
+    border-radius: 50%;
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    transition: 0.1s;
+  }
+</style>
+
 </body>
 </html>
+
