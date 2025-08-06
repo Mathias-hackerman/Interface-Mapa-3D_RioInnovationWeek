@@ -59,6 +59,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// JOYSTICK: suporte touch + mouse
 let joystick = {
   active: false,
   startX: 0,
@@ -70,21 +71,18 @@ let joystick = {
 const stick = document.getElementById("joystick-stick");
 const base = document.getElementById("joystick-base");
 
-base.addEventListener("touchstart", (e) => {
+function startJoystick(clientX, clientY) {
   joystick.active = true;
-  const touch = e.targetTouches[0];
-  joystick.startX = touch.clientX;
-  joystick.startY = touch.clientY;
-}, false);
+  joystick.startX = clientX;
+  joystick.startY = clientY;
+}
 
-base.addEventListener("touchmove", (e) => {
+function moveJoystick(clientX, clientY) {
   if (!joystick.active) return;
 
-  const touch = e.targetTouches[0];
-  const dx = touch.clientX - joystick.startX;
-  const dy = touch.clientY - joystick.startY;
+  const dx = clientX - joystick.startX;
+  const dy = clientY - joystick.startY;
 
-  // Limite o deslocamento do stick
   const maxDist = 40;
   const dist = Math.hypot(dx, dy);
   const angle = Math.atan2(dy, dx);
@@ -97,16 +95,30 @@ base.addEventListener("touchmove", (e) => {
 
   joystick.deltaX = limitedX / maxDist;
   joystick.deltaY = limitedY / maxDist;
+}
 
-  e.preventDefault();
-}, false);
-
-base.addEventListener("touchend", () => {
+function endJoystick() {
   joystick.active = false;
   joystick.deltaX = 0;
   joystick.deltaY = 0;
   stick.style.transform = `translate(0px, 0px)`;
-}, false);
+}
+
+// Touch
+base.addEventListener("touchstart", e => startJoystick(e.targetTouches[0].clientX, e.targetTouches[0].clientY));
+base.addEventListener("touchmove", e => {
+  moveJoystick(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+  e.preventDefault();
+});
+base.addEventListener("touchend", endJoystick);
+
+// Mouse
+base.addEventListener("mousedown", e => startJoystick(e.clientX, e.clientY));
+window.addEventListener("mousemove", e => {
+  if (joystick.active) moveJoystick(e.clientX, e.clientY);
+});
+window.addEventListener("mouseup", endJoystick);
+
 
 function animate() {
   requestAnimationFrame(animate);
@@ -114,18 +126,24 @@ function animate() {
   let moveX = 0;
   let moveZ = 0;
   
+  // Movimento com teclado
   if (keys.w) moveZ -= 1;
   if (keys.s) moveZ += 1;
   if (keys.a) moveX -= 1;
   if (keys.d) moveX += 1;
   
-  // Joystick (normalizado)
+  // Movimento com joystick (touch ou mouse)
   moveX += joystick.deltaX;
   moveZ += joystick.deltaY;
   
+  // Aplicar movimento ao cubo
   cube.position.x += moveX * speed;
   cube.position.z += moveZ * speed;
 
+
+  camera.position.x = cube.position.x;
+  camera.position.z = cube.position.z + 10;
+  camera.lookAt(cube.position);
 
   renderer.render(scene, camera);
 }
