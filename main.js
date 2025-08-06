@@ -8,7 +8,9 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.set(0, 5, 10);
+camera.position.set(10, 20, 10);  // X, Y, Z
+camera.lookAt(cube.position);
+
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -141,9 +143,14 @@ function animate() {
   cube.position.z += moveZ * speed;
 
 
-  camera.position.x = cube.position.x;
-  camera.position.z = cube.position.z + 10;
+  // Manter a câmera na mesma orientação relativa ao cubo
+  camera.position.set(
+    cube.position.x + 10,
+    cube.position.y + 20,
+    cube.position.z + 10
+  );
   camera.lookAt(cube.position);
+
 
   renderer.render(scene, camera);
 }
