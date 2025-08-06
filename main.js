@@ -29,12 +29,17 @@ floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
 // Cubo
-const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube.position.y = 0.5;
-scene.add(cube);
-camera.lookAt(cube.position);
+let personagem = null;
+
+const loader = new THREE.GLTFLoader();
+loader.load('personagem.glb', (gltf) => {
+  personagem = gltf.scene;
+  personagem.scale.set(1, 1, 1); // Escala parecida com o cubo
+  personagem.position.set(0, 0, 0.5); // Mesmo local que o cubo
+  scene.add(personagem);
+});
+
+camera.lookAt(personagem.position);
 
 // Controles de movimento
 const keys = {
@@ -140,17 +145,24 @@ function animate() {
   moveZ += joystick.deltaY;
   
   // Aplicar movimento ao cubo
-  cube.position.x += moveX * speed;
-  cube.position.z += moveZ * speed;
-
-
-  // Manter a câmera na mesma orientação relativa ao cubo
-  camera.position.set(
-    cube.position.x + 10,
-    cube.position.y + 20,
-    cube.position.z + 10
-  );
-  camera.lookAt(cube.position);
+  if (personagem) {
+    personagem.position.x += moveX * speed;
+    personagem.position.z += moveZ * speed;
+  
+    // Rotação do personagem
+    if (moveX !== 0 || moveZ !== 0) {
+      const angle = Math.atan2(moveX, moveZ); // invertido para alinhar com Z
+      personagem.rotation.y = angle;
+    }
+  
+      // Câmera isométrica seguindo personagem
+      camera.position.set(
+        personagem.position.x + 10,
+        personagem.position.y + 20,
+        personagem.position.z + 10
+      );
+      camera.lookAt(personagem.position);
+  }
 
 
   renderer.render(scene, camera);
