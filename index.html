@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Personagem 3D fixo com WASD</title>
+  <title>Mapa 3D com Cubo Controlável</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; padding: 0; overflow: hidden; }
+    body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
   </style>
 
@@ -17,7 +17,7 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-    const initialLng = -43.1729;     // Rio de Janeiro
+    const initialLng = -43.1729;
     const initialLat = -22.9068;
     let currentLng = initialLng;
     let currentLat = initialLat;
@@ -30,10 +30,10 @@
       KeyD: false
     };
 
-    // Detectar teclas WASD
     window.addEventListener('keydown', (e) => {
       if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
     });
+
     window.addEventListener('keyup', (e) => {
       if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
     });
@@ -48,22 +48,16 @@
       antialias: true
     });
 
-    let cube;
-    let mercatorCoord;
-    let meterScale;
-
     map.on('load', () => {
-      // Coordenadas iniciais em Mercator
-      mercatorCoord = maplibregl.MercatorCoordinate.fromLngLat([initialLng, initialLat], 0);
-      meterScale = mercatorCoord.meterInMercatorUnits();
-
       const customLayer = {
         id: 'threejs-layer',
         type: 'custom',
         renderingMode: '3d',
+
         onAdd: function (map, gl) {
           this.scene = new THREE.Scene();
           this.camera = new THREE.Camera();
+
           this.renderer = new THREE.WebGLRenderer({
             canvas: map.getCanvas(),
             context: gl,
@@ -71,19 +65,30 @@
           });
           this.renderer.autoClear = false;
 
-          // Cria cubo 1x1x1m escalado
-          const geometry = new THREE.BoxGeometry(1, 1, 1);
-          const material = new THREE.MeshNormalMaterial();
-          cube = new THREE.Mesh(geometry, material);
+          // DEBUG: Caixa vermelha, wireframe
+          const geometry = new THREE.BoxGeometry(10, 10, 10); // Tamanho grande visível
+          const material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+          this.cube = new THREE.Mesh(geometry, material);
 
-          // Escala e posição do cubo
-          cube.scale.set(meterScale, meterScale, meterScale);
-          cube.position.set(mercatorCoord.x, mercatorCoord.y, mercatorCoord.z + 2 * meterScale);
-          this.scene.add(cube);
+          // DEBUG: posição absoluta no centro Mercator
+          const mercator = maplibregl.MercatorCoordinate.fromLngLat(
+            [initialLng, initialLat],
+            0 // altitude 0 metros
+          );
+
+          const zoom = map.getZoom();
+          const lat = initialLat;
+          const scale = Math.cos(lat * Math.PI / 180) * (2 ** zoom) / 512;
+
+
+          this.cube.scale.set(scale * 10, scale * 10, scale * 10);
+          this.cube.position.set(mercator.x, mercator.y, mercator.z + 2 * scale);
+
+          this.scene.add(this.cube);
         },
 
         render: function (gl, matrix) {
-          // Atualiza posição simulada
+          // Movimentação do mapa (como se o cubo andasse)
           if (keys.KeyW) currentLat += moveSpeed;
           if (keys.KeyS) currentLat -= moveSpeed;
           if (keys.KeyA) currentLng -= moveSpeed;
@@ -91,7 +96,6 @@
 
           map.setCenter([currentLng, currentLat]);
 
-          // Renderizar
           const m = new THREE.Matrix4().fromArray(matrix);
           this.camera.projectionMatrix = m;
           this.renderer.state.reset();
