@@ -16,19 +16,22 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
+    const initialLngLat = { lng: -43.1729, lat: -22.9068 };
+    let lng = initialLngLat.lng;
+    let lat = initialLngLat.lat;
+
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://demotiles.maplibre.org/style.json',
-      center: [-43.1729, -22.9068], // Rio de Janeiro
+      center: [lng, lat],
       zoom: 16,
       pitch: 60,
       bearing: -20,
       antialias: true
     });
 
-    let cube, scene, camera, renderer, mercator, keys = {};
-
-    const initialLngLat = [-43.1729, -22.9068];
+    let cube, scene, camera, renderer;
+    const keys = {};
 
     map.on('load', () => {
       const customLayer = {
@@ -43,34 +46,28 @@
           light.position.set(0, 0, 1000).normalize();
           scene.add(light);
 
-          const geometry = new THREE.BoxGeometry(10, 10, 10);
+          const geometry = new THREE.BoxGeometry(20, 20, 20);
           const material = new THREE.MeshNormalMaterial();
           cube = new THREE.Mesh(geometry, material);
           scene.add(cube);
 
           renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl });
           renderer.autoClear = false;
-
-          mercator = maplibregl.MercatorCoordinate.fromLngLat(
-            { lng: initialLngLat[0], lat: initialLngLat[1] },
-            0
-          );
-
-          cube.position.copy(mercator);
         },
         render(gl, matrix) {
-          // Atualiza posição baseada nas teclas pressionadas
-          const speed = 0.0005;
-          if (keys['w']) mercator.y += speed;
-          if (keys['s']) mercator.y -= speed;
-          if (keys['a']) mercator.x -= speed;
-          if (keys['d']) mercator.x += speed;
+          // Atualiza lng/lat com base em teclas pressionadas
+          const speed = 0.0002;
+          if (keys['w']) lat += speed;
+          if (keys['s']) lat -= speed;
+          if (keys['a']) lng -= speed;
+          if (keys['d']) lng += speed;
 
-          cube.position.copy(mercator);
+          // Converte para coordenada do mundo 3D
+          const mercatorCoord = maplibregl.MercatorCoordinate.fromLngLat({ lng, lat }, 0);
+          cube.position.set(mercatorCoord.x, mercatorCoord.y, mercatorCoord.z);
 
-          // Mantém o mapa centrado no cubo
-          const lngLat = map.unproject([map.getCanvas().width / 2, map.getCanvas().height / 2]);
-          map.setCenter({ lng: mercator.lng || lngLat.lng, lat: mercator.lat || lngLat.lat });
+          // Faz o mapa seguir o cubo
+          map.setCenter([lng, lat]);
 
           camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
           renderer.state.reset();
@@ -82,9 +79,9 @@
       map.addLayer(customLayer);
     });
 
-    // Controles WASD
-    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+    // Teclado
+    window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
   </script>
 </body>
 </html>
