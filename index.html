@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Jogador 3D com MapLibre</title>
+  <title>Jogador 3D fixo no centro da tela</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { margin: 0; padding: 0; }
@@ -17,9 +17,10 @@
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-    let playerLng = -43.1729;
-    let playerLat = -22.9068;
-    const playerSpeed = 0.0003;
+    const initialPosition = [-43.1729, -22.9068]; // Centro do Rio
+    let currentLng = initialPosition[0];
+    let currentLat = initialPosition[1];
+    const moveSpeed = 0.0005;
 
     const keys = {
       ArrowUp: false,
@@ -29,17 +30,17 @@
     };
 
     window.addEventListener('keydown', e => {
-      if (e.key in keys) keys[e.key] = true;
+      if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
     });
 
     window.addEventListener('keyup', e => {
-      if (e.key in keys) keys[e.key] = false;
+      if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
     });
 
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://demotiles.maplibre.org/style.json',
-      center: [playerLng, playerLat],
+      center: initialPosition,
       zoom: 17,
       pitch: 60,
       bearing: 0,
@@ -63,29 +64,24 @@
           });
           this.renderer.autoClear = false;
 
-          // Criando cubo 3D
           const geometry = new THREE.BoxGeometry(10, 10, 10);
           const material = new THREE.MeshNormalMaterial();
           cube = new THREE.Mesh(geometry, material);
+          cube.position.set(0, 0, 5); // Fixo no centro da tela
           this.scene.add(cube);
         },
+
         render: function (gl, matrix) {
-          // Atualiza posição do jogador
-          if (keys.ArrowUp) playerLat += playerSpeed;
-          if (keys.ArrowDown) playerLat -= playerSpeed;
-          if (keys.ArrowLeft) playerLng -= playerSpeed;
-          if (keys.ArrowRight) playerLng += playerSpeed;
+          // Atualiza posição geográfica com base nas teclas
+          if (keys.ArrowUp) currentLat += moveSpeed;
+          if (keys.ArrowDown) currentLat -= moveSpeed;
+          if (keys.ArrowLeft) currentLng -= moveSpeed;
+          if (keys.ArrowRight) currentLng += moveSpeed;
 
-          // Move o cubo na posição atualizada
-          const merc = maplibregl.MercatorCoordinate.fromLngLat([playerLng, playerLat], 0);
-          cube.position.set(merc.x, merc.y, merc.z + 0.005);
+          // Move o mapa, não o cubo
+          map.setCenter([currentLng, currentLat]);
 
-          // Escala visual (ajustável)
-          cube.scale.set(merc.meterInMercatorUnits(), merc.meterInMercatorUnits(), merc.meterInMercatorUnits());
-
-          // Câmera segue o jogador
-          map.setCenter([playerLng, playerLat]);
-
+          // Atualiza a câmera e renderiza
           const m = new THREE.Matrix4().fromArray(matrix);
           this.camera.projectionMatrix = m;
           this.renderer.state.reset();
