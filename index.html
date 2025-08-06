@@ -1,87 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <title>Rio 3D com WASD</title>
+  <meta charset="UTF-8">
+  <title>Cubo com movimento WASD</title>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
-  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
 </head>
 <body>
-  <div id="map"></div>
-
-  <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-
-    const initialLngLat = { lng: -43.1729, lat: -22.9068 };
-    let lng = initialLngLat.lng;
-    let lat = initialLngLat.lat;
-
-    const map = new maplibregl.Map({
-      container: 'map',
-      style: 'https://demotiles.maplibre.org/style.json',
-      center: [lng, lat],
-      zoom: 16,
-      pitch: 60,
-      bearing: -20,
-      antialias: true
-    });
-
-    let cube, scene, camera, renderer;
-    const keys = {};
-
-    map.on('load', () => {
-      const customLayer = {
-        id: 'three-layer',
-        type: 'custom',
-        renderingMode: '3d',
-        onAdd(map, gl) {
-          camera = new THREE.Camera();
-          scene = new THREE.Scene();
-
-          const light = new THREE.DirectionalLight(0xffffff, 1);
-          light.position.set(0, 0, 1000).normalize();
-          scene.add(light);
-
-          const geometry = new THREE.BoxGeometry(20, 20, 20);
-          const material = new THREE.MeshNormalMaterial();
-          cube = new THREE.Mesh(geometry, material);
-          scene.add(cube);
-
-          renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl });
-          renderer.autoClear = false;
-        },
-        render(gl, matrix) {
-          // Atualiza lng/lat com base em teclas pressionadas
-          const speed = 0.0002;
-          if (keys['w']) lat += speed;
-          if (keys['s']) lat -= speed;
-          if (keys['a']) lng -= speed;
-          if (keys['d']) lng += speed;
-
-          // Converte para coordenada do mundo 3D
-          const mercatorCoord = maplibregl.MercatorCoordinate.fromLngLat({ lng, lat }, 0);
-          cube.position.set(mercatorCoord.x, mercatorCoord.y, mercatorCoord.z);
-
-          // Faz o mapa seguir o cubo
-          map.setCenter([lng, lat]);
-
-          camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
-          renderer.state.reset();
-          renderer.render(scene, camera);
-          map.triggerRepaint();
-        }
-      };
-
-      map.addLayer(customLayer);
-    });
-
-    // Teclado
-    window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
